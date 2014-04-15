@@ -2,6 +2,8 @@ MBTAShortcoder
 ==============
 
 WordPress shortcode plugin that checks subway times for a particular stop and line combination.
+Supports red, orange, and blue lines.
+Green line does not have live data as of yet.
 
 Examples:
 ```
