@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: MBTAShortcoder
- * Plugin URI: http://crew.ccs.neu.edu
- * Description: Provides a shortcode to display MBTA subway statuses for given stops.
+ * Plugin URI: https://github.com/wolfd/MBTAShortcoder
+ * Description: Provides a shortcode to display MBTA subway statuses for given stops. Made for Northeastern College of Computer and Information Science Crew for the Digital Display Systems project.
  * Version: 0.1
  * Author: Danny Wolf <wolf@ccs.neu.edu>
  * Author URI: http://crew.ccs.neu.edu
