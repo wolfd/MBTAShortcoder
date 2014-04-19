@@ -37,24 +37,19 @@ define('DDS_MBTA_GOOGLE_FONTS_NAME', 'mbtastatusgooglefonts');
  */
 class MBTAShortcoder
 {
-    /**
-     * @var array
+    /** Stores the associated statuses of different MBTA lines.
+     * @var array of train statuses
      */
     var $current_status = array();
 
     /**
-     *
+     * Constructs the MBTAShortcoder object
      */
     function __construct()
     {
         add_shortcode('mbtastatus', array(&$this, 'mbta_status_short_code'));
 
-        wp_register_style(DDS_MBTA_STYLE_NAME, plugins_url('mbta-status.css', __FILE__));
-        wp_register_style(DDS_MBTA_GOOGLE_FONTS_NAME, '//fonts.googleapis.com/css?family=Nunito:300,400,700');
-
-        // load stylesheets
-        wp_enqueue_style(DDS_MBTA_STYLE_NAME);
-        wp_enqueue_style(DDS_MBTA_GOOGLE_FONTS_NAME);
+        add_action('wp_enqueue_scripts', array(&$this, 'enqueue_scripts'));
     }
 
     /**
@@ -71,6 +66,19 @@ class MBTAShortcoder
     function deactivate()
     {
 
+    }
+
+    /** Adds the custom plugin CSS. At this time this CSS is added to every page, as shortcodes cannot add CSS to the
+     * header.
+     */
+    function enqueue_scripts()
+    {
+        wp_register_style(DDS_MBTA_STYLE_NAME, plugins_url('mbta-status.css', __FILE__));
+        wp_register_style(DDS_MBTA_GOOGLE_FONTS_NAME, '//fonts.googleapis.com/css?family=Nunito:300,400,700');
+
+        // load stylesheets
+        wp_enqueue_style(DDS_MBTA_STYLE_NAME);
+        wp_enqueue_style(DDS_MBTA_GOOGLE_FONTS_NAME);
     }
 
     /** Shortcode for getting subway status for red, orange, and blue lines
@@ -135,66 +143,6 @@ class MBTAShortcoder
         <?php
 
         return ob_get_clean();
-    }
-
-    /** Get the subway's official color according to Wikipedia by the line's short name
-     * @param $line string the short name of the line (e.g. orange)
-     * @return string the HTML color code prefaced by a #
-     */
-    function get_color($line)
-    {
-        switch ($line) {
-            case 'orange':
-            return '#FD8A03';
-            case 'red':
-            return '#FA2D27';
-            case 'green': //wishful thinking
-            return '#008150';
-            case 'blue':
-            return '#2F5DA6';
-            default:
-                return '#000000';
-        }
-    }
-
-    /** Get the short name of a line based on it's long name
-     * @param $line string the long name of a line (e.g. 'Orange Line')
-     * @return string the short name of the line (e.g. 'orange')
-     */
-    function get_short_name($line)
-    {
-        switch ($line) {
-            case 'Orange Line':
-                return 'orange';
-            case 'Red Line':
-                return 'red';
-            case 'Green Line': //wishful thinking
-                return 'green';
-            case 'Blue Line':
-                return 'blue';
-            default:
-                return 'default';
-        }
-    }
-
-    /** Get the long name of a line based on it's short name
-     * @param $line string the short name of the line (e.g. 'orange')
-     * @return string the long name of a line (e.g. 'Orange Line')
-     */
-    function get_long_name($line)
-    {
-        switch ($line) {
-            case 'orange':
-                return 'Orange Line';
-            case 'red':
-                return 'Red Line';
-            case 'green': //wishful thinking
-                return 'Green Line';
-            case 'blue':
-                return 'Blue Line';
-            default:
-                return 'N/A';
-        }
     }
 
     /** Get the status of a line. CURLs MBTA's API if necessary, otherwise uses a timestamp to count down.
@@ -305,5 +253,65 @@ class MBTAShortcoder
         $data = curl_exec($ch);
         curl_close($ch);
         return $data;
+    }
+
+    /** Get the long name of a line based on it's short name
+     * @param $line string the short name of the line (e.g. 'orange')
+     * @return string the long name of a line (e.g. 'Orange Line')
+     */
+    function get_long_name($line)
+    {
+        switch ($line) {
+            case 'orange':
+                return 'Orange Line';
+            case 'red':
+                return 'Red Line';
+            case 'green': //wishful thinking
+                return 'Green Line';
+            case 'blue':
+                return 'Blue Line';
+            default:
+                return 'N/A';
+        }
+    }
+
+    /** Get the subway's official color according to Wikipedia by the line's short name
+     * @param $line string the short name of the line (e.g. orange)
+     * @return string the HTML color code prefaced by a #
+     */
+    function get_color($line)
+    {
+        switch ($line) {
+            case 'orange':
+                return '#FD8A03';
+            case 'red':
+                return '#FA2D27';
+            case 'green': //wishful thinking
+                return '#008150';
+            case 'blue':
+                return '#2F5DA6';
+            default:
+                return '#000000';
+        }
+    }
+
+    /** Get the short name of a line based on it's long name
+     * @param $line string the long name of a line (e.g. 'Orange Line')
+     * @return string the short name of the line (e.g. 'orange')
+     */
+    function get_short_name($line)
+    {
+        switch ($line) {
+            case 'Orange Line':
+                return 'orange';
+            case 'Red Line':
+                return 'red';
+            case 'Green Line': //wishful thinking
+                return 'green';
+            case 'Blue Line':
+                return 'blue';
+            default:
+                return 'default';
+        }
     }
 }
