@@ -113,23 +113,33 @@ class MBTAShortcoder
 
             <?php
             foreach ($status as $destination => $predictions) {
-                ?>
-                <div class="mbta-destination-container"><h2 class="mbta-destination mbta-medium">
-                        To <?php echo $destination; ?></h2>
+                if (!empty($destination)) {
+                    ?>
+                    <div class="mbta-destination-container"><h2 class="mbta-destination mbta-medium">
+                            To <?php echo $destination; ?></h2>
 
-                    <div class="mbta-trains-container">
-                        <h3 class="mbta-trains-in mbta-light">Trains arrive in:</h3>
-                        <?php
+                        <div class="mbta-trains-container">
+                            <h3 class="mbta-trains-in mbta-light">Trains arrive in:</h3>
+                            <?php
 
-                        for ($i = 0; $i < min(count($predictions), DDS_MBTA_NUMBER_OF_TRAINS_TO_DISPLAY); $i++) {
-                            $eta_minutes = number_format(($predictions[$i] / 60), 0, '.', ','); // In case of readability during/after armageddon.
-                            ?><h3 class="mbta-minutes mbta-medium"><?php echo $eta_minutes; ?> minutes</h3><?php
-                        }
+                            for ($i = 0; $i < min(count($predictions), DDS_MBTA_NUMBER_OF_TRAINS_TO_DISPLAY); $i++) {
+                                $eta_minutes = (int)($predictions[$i] / 60);
+                                $eta_minutes_string = "";
+                                if ($eta_minutes >= 2) {
+                                    $eta_minutes_string = number_format(($predictions[$i] / 60), 0, '.', ',') . " minutes"; // In case of readability during/after armageddon.
+                                } else {
+                                    // All train times less than 2 minutes are considered to be coming "now"
+                                    $eta_minutes_string = "now";
+                                }
 
-                        ?>
+                                ?><h3 class="mbta-minutes mbta-medium"><?php echo $eta_minutes_string; ?></h3><?php
+                            }
+
+                            ?>
+                        </div>
                     </div>
-                </div>
-            <?php
+                <?php
+                }
             }
 
             if (count($status) == 0) {
