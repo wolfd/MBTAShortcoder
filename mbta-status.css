@@ -3,7 +3,8 @@
 }
 
 .mbta-inline {
-    display: inline;
+    display: inline-block;
+    margin: 0;
 }
 
 .mbta-light {
@@ -46,17 +47,13 @@
 }
 
 .mbta-destination-container {
-    width: 49%;
-    display: inline-block;
-}
-
-.mbta-destination-container:nth-child(odd) {
-    text-align: right;
-    float: right;
+    width: 33%;
+    display: table-cell;
 }
 
 .mbta-destination {
-    margin: 16px 32px;
+    margin: 16px 32px 2px 32px;
+    border-bottom: 1px solid black;
 }
 
 .mbta-trains-container {
@@ -65,6 +62,7 @@
 
 .mbta-trains-in {
     margin: 0;
+    font-size: 8pt;
 }
 
 .mbta-minutes {

@@ -119,7 +119,6 @@ class MBTAShortcoder
                             To <?php echo $destination; ?></h2>
 
                         <div class="mbta-trains-container">
-                            <h3 class="mbta-trains-in mbta-light">Trains arrive in:</h3>
                             <?php
 
                             for ($i = 0; $i < min(count($predictions), DDS_MBTA_NUMBER_OF_TRAINS_TO_DISPLAY); $i++) {
