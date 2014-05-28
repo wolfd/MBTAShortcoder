@@ -8,11 +8,8 @@
  * Author URI: http://crew.ccs.neu.edu
  */
 
-include_once("MBTAShortcoder.class.php");
+include_once( "MBTAShortcoder.class.php" );
 
-if (class_exists('MBTAShortcoder')) {
-    register_activation_hook("MBTAShortcoder.class.php", array("MBTAShortcoder", "activate"));
-    register_deactivation_hook("MBTAShortcoder.class.php", array("MBTAShortcoder", "deactivate"));
-
-    $dds_mbta_status = new MBTAShortcoder();
+if ( class_exists( 'MBTAShortcoder' ) ) {
+	$dds_mbta_status = new MBTAShortcoder();
 }

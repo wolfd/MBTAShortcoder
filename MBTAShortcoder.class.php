@@ -9,318 +9,318 @@
 /**
  * Defines base url to add line name onto. Only supported lines are blue, red, and orange.
  */
-define('DDS_MBTA_STATUS_BASE_LINE_URL', 'http://developer.mbta.com/lib/rthr/');
+define( 'DDS_MBTA_STATUS_BASE_LINE_URL', 'http://developer.mbta.com/lib/rthr/' );
 /**
  * Seconds to wait for updated status
  */
-define('DDS_MBTA_QUERY_CONNECT_TIMEOUT', 5);
+define( 'DDS_MBTA_QUERY_CONNECT_TIMEOUT', 5 );
 /**
  * Maximum number of train's prediction times to display
  */
-define('DDS_MBTA_NUMBER_OF_TRAINS_TO_DISPLAY', 4);
+define( 'DDS_MBTA_NUMBER_OF_TRAINS_TO_DISPLAY', 4 );
 /**
  * Time zone of MBTA
  */
-define('DDS_MBTA_TIME_ZONE', 'America/New_York');
+define( 'DDS_MBTA_TIME_ZONE', 'America/New_York' );
 /**
  * Name of the css style registered with WordPress
  */
-define('DDS_MBTA_STYLE_NAME', 'mbtastatus');
+define( 'DDS_MBTA_STYLE_NAME', 'mbtastatus' );
 /**
  * Name of the css style registered with WordPress for google fonts
  */
-define('DDS_MBTA_GOOGLE_FONTS_NAME', 'mbtastatusgooglefonts');
+define( 'DDS_MBTA_GOOGLE_FONTS_NAME', 'mbtastatusgooglefonts' );
 
 
 /**
  * Class MBTAShortcoder
  */
-class MBTAShortcoder
-{
-    /** Stores the associated statuses of different MBTA lines.
-     * @var array of train statuses
-     */
-    var $current_status = array();
+class MBTAShortcoder {
 
-    /**
-     * Constructs the MBTAShortcoder object
-     */
-    function __construct()
-    {
-        add_shortcode('mbtastatus', array(&$this, 'mbta_status_short_code'));
+	/**
+	 * Stores the associated statuses of different MBTA lines.
+	 * @var array of train statuses
+	 */
+	var $current_status = array();
 
-        add_action('wp_enqueue_scripts', array(&$this, 'enqueue_scripts'));
-    }
+	/**
+	 * Constructs the MBTAShortcoder object
+	 */
+	function __construct() {
+		add_shortcode( 'mbtastatus', array( &$this, 'mbta_status_short_code' ) );
 
-    /**
-     * Activate plugin, and add associated options
-     */
-    function activate()
-    {
+		add_action( 'wp_enqueue_scripts', array( &$this, 'enqueue_scripts' ) );
+	}
 
-    }
+	/**
+	 * Adds the custom plugin CSS. At this time this CSS is added to every page, as shortcodes cannot add CSS to the
+	 * header.
+	 */
+	function enqueue_scripts() {
+		wp_register_style( DDS_MBTA_STYLE_NAME, plugins_url( 'mbta-status.css', __FILE__ ) );
+		wp_register_style( DDS_MBTA_GOOGLE_FONTS_NAME, '//fonts.googleapis.com/css?family=Nunito:300,400,700' );
 
-    /**
-     * Deactivate plugin, and remove associated options
-     */
-    function deactivate()
-    {
+		// load stylesheets
+		wp_enqueue_style( DDS_MBTA_STYLE_NAME );
+		wp_enqueue_style( DDS_MBTA_GOOGLE_FONTS_NAME );
+	}
 
-    }
+	/**
+	 * Shortcode for getting subway status for red, orange, and blue lines
+	 *
+	 * @param $atts array line: short name (red, orange, blue), stop: full name according to MBTA (might require looking up, e.g. 'Ruggles' or 'Park Street')
+	 *
+	 * @return string the shortcode's html
+	 */
+	function mbta_status_short_code( $atts ) {
+		// get attributes out of short code
+		$atts = shortcode_atts( array(
+			'line' => 'orange', // short name
+			'stop' => 'Ruggles'
+		), $atts );
 
-    /** Adds the custom plugin CSS. At this time this CSS is added to every page, as shortcodes cannot add CSS to the
-     * header.
-     */
-    function enqueue_scripts()
-    {
-        wp_register_style(DDS_MBTA_STYLE_NAME, plugins_url('mbta-status.css', __FILE__));
-        wp_register_style(DDS_MBTA_GOOGLE_FONTS_NAME, '//fonts.googleapis.com/css?family=Nunito:300,400,700');
+		$status = $this->get_status( $atts['line'], $atts['stop'] );
 
-        // load stylesheets
-        wp_enqueue_style(DDS_MBTA_STYLE_NAME);
-        wp_enqueue_style(DDS_MBTA_GOOGLE_FONTS_NAME);
-    }
+		$long_name = $this->get_long_name( $atts['line'] );
 
-    /** Shortcode for getting subway status for red, orange, and blue lines
-     * @param $atts array line: short name (red, orange, blue), stop: full name according to MBTA (might require looking up, e.g. 'Ruggles' or 'Park Street')
-     * @return string the shortcode's html
-     */
-    function mbta_status_short_code($atts)
-    {
-        // get attributes out of short code
-        extract(shortcode_atts(array(
-            'line' => 'orange', // short name
-            'stop' => 'Ruggles'
-        ), $atts));
+		ob_start();
+		?>
+		<div class="mbta-container">
+			<div class="mbta-status-banner-container"
+				 style="border-bottom: 1px solid <?php echo $this->get_color( $atts['line'] ); ?>">
+				<div class="mbta-banner-left">
+					<h1 class="mbta-large mbta-heavy mbta-inline"><?php echo $atts['stop']; ?></h1>
 
-        $status = $this->get_status($line, $stop);
+					<h1 class="mbta-large mbta-medium mbta-inline"
+						style="color: <?php echo $this->get_color( $atts['line'] ); ?>"><?php echo $long_name; ?></h1>
+				</div>
+				<div class="mbta-banner-right"><h1 class="mbta-large mbta-light mbta-inline">MBTA</h1></div>
+			</div>
 
-        $long_name = $this->get_long_name($line);
+			<?php
+			foreach ( $status as $destination => $predictions ) {
+				if ( ! empty( $destination ) ) {
+					?>
+					<div class="mbta-destination-container"><h2 class="mbta-destination mbta-medium">
+							To <?php echo $destination; ?></h2>
 
-        ob_start();
-        ?>
-        <div class="mbta-container">
-            <div class="mbta-status-banner-container"
-                 style="border-bottom: 1px solid <?php echo $this->get_color($line); ?>">
-                <div class="mbta-banner-left">
-                    <h1 class="mbta-large mbta-heavy mbta-inline"><?php echo $stop; ?></h1>
+						<div class="mbta-trains-container">
+							<?php
 
-                    <h1 class="mbta-large mbta-medium mbta-inline"
-                        style="color: <?php echo $this->get_color($line); ?>"><?php echo $long_name; ?></h1>
-                </div>
-                <div class="mbta-banner-right"><h1 class="mbta-large mbta-light mbta-inline">MBTA</h1></div>
-            </div>
+							for ( $i = 0; $i < min( count( $predictions ), DDS_MBTA_NUMBER_OF_TRAINS_TO_DISPLAY ); $i ++ ) {
+								$eta_minutes = (int) ( $predictions[$i] / 60 );
 
-            <?php
-            foreach ($status as $destination => $predictions) {
-                if (!empty($destination)) {
-                    ?>
-                    <div class="mbta-destination-container"><h2 class="mbta-destination mbta-medium">
-                            To <?php echo $destination; ?></h2>
+								if ( $eta_minutes >= 2 ) {
+									$eta_minutes_string = number_format( ( $predictions[$i] / 60 ), 0, '.', ',' ) . " minutes"; // In case of readability during/after armageddon.
+								} else {
+									// All train times less than 2 minutes are considered to be coming "now"
+									$eta_minutes_string = "now";
+								}
 
-                        <div class="mbta-trains-container">
-                            <?php
+								?><h3 class="mbta-minutes mbta-medium"><?php echo $eta_minutes_string; ?></h3><?php
+							}
 
-                            for ($i = 0; $i < min(count($predictions), DDS_MBTA_NUMBER_OF_TRAINS_TO_DISPLAY); $i++) {
-                                $eta_minutes = (int)($predictions[$i] / 60);
-                                $eta_minutes_string = "";
-                                if ($eta_minutes >= 2) {
-                                    $eta_minutes_string = number_format(($predictions[$i] / 60), 0, '.', ',') . " minutes"; // In case of readability during/after armageddon.
-                                } else {
-                                    // All train times less than 2 minutes are considered to be coming "now"
-                                    $eta_minutes_string = "now";
-                                }
+							?>
+						</div>
+					</div>
+				<?php
+				}
+			}
 
-                                ?><h3 class="mbta-minutes mbta-medium"><?php echo $eta_minutes_string; ?></h3><?php
-                            }
+			if ( count( $status ) == 0 ) {
+				?>
+				<div class="mbta-no-trains-container"><h1 class="mbta-superlarge mbta-medium">No Trains Running</h1>
+				</div>
+			<?php
+			}
+			?>
+		</div>
+		<?php
 
-                            ?>
-                        </div>
-                    </div>
-                <?php
-                }
-            }
+		return ob_get_clean();
+	}
 
-            if (count($status) == 0) {
-                ?>
-                <div class="mbta-no-trains-container"><h1 class="mbta-superlarge mbta-medium">No Trains Running</h1>
-                </div>
-            <?php
-            }
-            ?>
-        </div>
-        <?php
+	/**
+	 * Get the status of a line. CURLs MBTA's API if necessary, otherwise uses a timestamp to count down.
+	 *
+	 * @param $line_name string the short name of a line
+	 * @param $stop_name string the exact MBTA stop name (e.g. 'Ruggles' or 'Park Street')
+	 *
+	 * @return array|bool json parsed status as an object or false if it couldn't get info
+	 */
+	function get_status( $line_name, $stop_name ) {
+		// Each different destination in the JSON file has an index.
+		$stop_predictions = array();
 
-        return ob_get_clean();
-    }
+		// update information if necessary
+		$this->update_line( $line_name );
 
-    /** Get the status of a line. CURLs MBTA's API if necessary, otherwise uses a timestamp to count down.
-     * @param $line_name string the short name of a line
-     * @param $stop_name string the exact MBTA stop name (e.g. 'Ruggles' or 'Park Street')
-     * @return array|bool json parsed status as an object or false if it couldn't get info
-     */
-    function get_status($line_name, $stop_name)
-    {
-        // Each different destination in the JSON file has an index.
-        $stop_predictions = array();
+		// if for some reason the status update failed, exit
+		if ( empty( $this->current_status[$line_name] ) ) {
+			return false;
+		}
 
-        // update information if necessary
-        $this->update_line($line_name);
+		// the timestamp of the JSON
+		$mbta_time = $this->current_status[$line_name]->TripList->CurrentTime;
 
-        // if for some reason the status update failed, exit
-        if (empty($this->current_status[$line_name])) return false;
+		// walk through the json and get every prediction that is for $stop_name
+		foreach ( $this->current_status[$line_name]->TripList->Trips as $trip ) {
+			$destination = $trip->Destination;
+			$predictions = $trip->Predictions;
 
-        // the timestamp of the JSON
-        $mbta_time = $this->current_status[$line_name]->TripList->CurrentTime;
-
-        // walk through the json and get every prediction that is for $stop_name
-        foreach ($this->current_status[$line_name]->TripList->Trips as $trip) {
-            $destination = $trip->Destination;
-            $predictions = $trip->Predictions;
-
-            // if stop_predictions does not have an entry for this destination, initialize it.
-            if (!isset($stop_predictions[$destination])) {
-                $stop_predictions[$destination] = array();
-            }
+			// if stop_predictions does not have an entry for this destination, initialize it.
+			if ( ! isset( $stop_predictions[$destination] ) ) {
+				$stop_predictions[$destination] = array();
+			}
 
 
-            foreach ($predictions as $prediction) {
+			foreach ( $predictions as $prediction ) {
 
-                if ($prediction->Stop == $stop_name) {
-                    // add prediction seconds to array under the right destination
-                    array_push($stop_predictions[$destination], $prediction->Seconds);
-                }
-            }
-        }
+				if ( $prediction->Stop == $stop_name ) {
+					// add prediction seconds to array under the right destination
+					array_push( $stop_predictions[$destination], $prediction->Seconds );
+				}
+			}
+		}
 
-        // update each prediction based on the difference between $mbta_time and the server's time
-        // get time difference
-        $now = new DateTime;
-        $now->setTimezone(new DateTimeZone(DDS_MBTA_TIME_ZONE));
-        $server_time = $now->getTimestamp();
-        $time_difference = $server_time - $mbta_time;
+		// update each prediction based on the difference between $mbta_time and the server's time
+		// get time difference
+		$now = new DateTime;
+		$now->setTimezone( new DateTimeZone( DDS_MBTA_TIME_ZONE ) );
+		$server_time     = $now->getTimestamp();
+		$time_difference = $server_time - $mbta_time;
 
-        $updated_predictions = array();
+		$updated_predictions = array();
 
-        // loop through predictions and subtract the time difference from every prediction.
-        foreach ($stop_predictions as $destination => $predictions) {
-            // create temporary array for storing prediction times and then sorting.
-            $updated_predictions_part = array();
-            foreach ($predictions as $index => $prediction) {
-                $updated_predictions_part[$index] = intval($prediction) - intval($time_difference); // just in case
-            }
-            // sort low to high prediction times
-            sort($updated_predictions_part);
-            // update destination
-            $updated_predictions[$destination] = $updated_predictions_part;
-        }
+		// loop through predictions and subtract the time difference from every prediction.
+		foreach ( $stop_predictions as $destination => $predictions ) {
+			// create temporary array for storing prediction times and then sorting.
+			$updated_predictions_part = array();
+			foreach ( $predictions as $index => $prediction ) {
+				$updated_predictions_part[$index] = intval( $prediction ) - intval( $time_difference ); // just in case
+			}
+			// sort low to high prediction times
+			sort( $updated_predictions_part );
+			// update destination
+			$updated_predictions[$destination] = $updated_predictions_part;
+		}
 
-        // sort destination keys
-        ksort($updated_predictions);
+		// sort destination keys
+		ksort( $updated_predictions );
 
-        return $updated_predictions;
-    }
+		return $updated_predictions;
+	}
 
-    /** Update the line if necessary, and set the $current_status variable to either a transient with recent info or currently CURLed info.
-     * @param $line string the short name of the line
-     */
-    private function update_line($line)
-    {
-        if (!isset($this->current_status[$line])) {
-            $this->current_status[$line] = false;
-        }
-        // gets the transient or sets it
-        if (false === ($this->current_status[$line] = get_transient('dds_mbta_current_status_' . $line))) {
-            $raw_contents = $this->get_data(DDS_MBTA_STATUS_BASE_LINE_URL . $line . '.json');
-            if ($raw_contents != false) {
-                $this->current_status[$line] = json_decode($raw_contents);
-            } else {
-                $this->current_status[$line] = false; // curl failed
-                error_log("DDS MBTA : Failed to get MBTA information from url" . DDS_MBTA_STATUS_BASE_LINE_URL . $line . '.json');
-            }
+	/**
+	 * Update the line if necessary, and set the $current_status variable to either a transient with recent info or currently CURLed info.
+	 *
+	 * @param $line string the short name of the line
+	 */
+	private function update_line( $line ) {
+		if ( ! isset( $this->current_status[$line] ) ) {
+			$this->current_status[$line] = false;
+		}
+		// gets the transient or sets it
+		if ( false === ( $this->current_status[$line] = get_transient( 'dds_mbta_current_status_' . $line ) ) ) {
+			$raw_contents = $this->get_data( DDS_MBTA_STATUS_BASE_LINE_URL . $line . '.json' );
+			if ( $raw_contents != false ) {
+				$this->current_status[$line] = json_decode( $raw_contents );
+			} else {
+				$this->current_status[$line] = false; // curl failed
+				error_log( "DDS MBTA : Failed to get MBTA information from url" . DDS_MBTA_STATUS_BASE_LINE_URL . $line . '.json' );
+			}
 
-            // set transient
-            set_transient(
-                'dds_mbta_current_status_' . $line,
-                $this->current_status[$line],
-                20 //seconds (MBTA doesn't want polls in frequencies greater than once every 10 seconds)
-            );
-        }
-    }
+			// set transient
+			set_transient(
+				'dds_mbta_current_status_' . $line,
+				$this->current_status[$line],
+				20 //seconds (MBTA doesn't want polls in frequencies greater than once every 10 seconds)
+			);
+		}
+	}
 
-    /** gets the data from a URL through CURL
-     * from: http://davidwalsh.name/curl-download
-     * @param $url string the url to CURL
-     * @return mixed|false returns false if failed, or data if true
-     */
-    private function get_data($url)
-    {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, DDS_MBTA_QUERY_CONNECT_TIMEOUT);
-        $data = curl_exec($ch);
-        curl_close($ch);
-        return $data;
-    }
+	/**
+	 * gets the data from a URL through CURL
+	 * from: http://davidwalsh.name/curl-download
+	 *
+	 * @param $url string the url to CURL
+	 *
+	 * @return mixed|false returns false if failed, or data if true
+	 */
+	private function get_data( $url ) {
+		$ch = curl_init();
+		curl_setopt( $ch, CURLOPT_URL, $url );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, DDS_MBTA_QUERY_CONNECT_TIMEOUT );
+		$data = curl_exec( $ch );
+		curl_close( $ch );
 
-    /** Get the long name of a line based on it's short name
-     * @param $line string the short name of the line (e.g. 'orange')
-     * @return string the long name of a line (e.g. 'Orange Line')
-     */
-    function get_long_name($line)
-    {
-        switch ($line) {
-            case 'orange':
-                return 'Orange Line';
-            case 'red':
-                return 'Red Line';
-            case 'green': //wishful thinking
-                return 'Green Line';
-            case 'blue':
-                return 'Blue Line';
-            default:
-                return 'N/A';
-        }
-    }
+		return $data;
+	}
 
-    /** Get the subway's official color according to Wikipedia by the line's short name
-     * @param $line string the short name of the line (e.g. orange)
-     * @return string the HTML color code prefaced by a #
-     */
-    function get_color($line)
-    {
-        switch ($line) {
-            case 'orange':
-                return '#FD8A03';
-            case 'red':
-                return '#FA2D27';
-            case 'green': //wishful thinking
-                return '#008150';
-            case 'blue':
-                return '#2F5DA6';
-            default:
-                return '#000000';
-        }
-    }
+	/**
+	 * Get the long name of a line based on it's short name
+	 *
+	 * @param $line string the short name of the line (e.g. 'orange')
+	 *
+	 * @return string the long name of a line (e.g. 'Orange Line')
+	 */
+	function get_long_name( $line ) {
+		switch ( $line ) {
+			case 'orange':
+				return 'Orange Line';
+			case 'red':
+				return 'Red Line';
+			case 'green': //wishful thinking
+				return 'Green Line';
+			case 'blue':
+				return 'Blue Line';
+			default:
+				return 'N/A';
+		}
+	}
 
-    /** Get the short name of a line based on it's long name
-     * @param $line string the long name of a line (e.g. 'Orange Line')
-     * @return string the short name of the line (e.g. 'orange')
-     */
-    function get_short_name($line)
-    {
-        switch ($line) {
-            case 'Orange Line':
-                return 'orange';
-            case 'Red Line':
-                return 'red';
-            case 'Green Line': //wishful thinking
-                return 'green';
-            case 'Blue Line':
-                return 'blue';
-            default:
-                return 'default';
-        }
-    }
+	/**
+	 * Get the subway's official color according to Wikipedia by the line's short name
+	 *
+	 * @param $line string the short name of the line (e.g. orange)
+	 *
+	 * @return string the HTML color code prefaced by a #
+	 */
+	function get_color( $line ) {
+		switch ( $line ) {
+			case 'orange':
+				return '#FD8A03';
+			case 'red':
+				return '#FA2D27';
+			case 'green': //wishful thinking
+				return '#008150';
+			case 'blue':
+				return '#2F5DA6';
+			default:
+				return '#000000';
+		}
+	}
+
+	/**
+	 * Get the short name of a line based on it's long name
+	 *
+	 * @param $line string the long name of a line (e.g. 'Orange Line')
+	 *
+	 * @return string the short name of the line (e.g. 'orange')
+	 */
+	function get_short_name( $line ) {
+		switch ( $line ) {
+			case 'Orange Line':
+				return 'orange';
+			case 'Red Line':
+				return 'red';
+			case 'Green Line': //wishful thinking
+				return 'green';
+			case 'Blue Line':
+				return 'blue';
+			default:
+				return 'default';
+		}
+	}
 }
